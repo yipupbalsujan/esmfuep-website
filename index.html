@@ -1,0 +1,371 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - ECWA Students Ministry FUEP</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fa;
+        }
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: #003087;
+            z-index: 1000;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .nav-scrolled {
+            background-color: rgba(0, 48, 135, 0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-logo {
+            height: 60px;
+            width: auto;
+            display: flex;
+            align-items: center;
+        }
+        .nav-logo img {
+            height: 60px;
+            width: auto;
+            border-radius: 90px;
+            object-fit: cover;
+        }
+        .nav-logo span {
+            color: #FFD700;
+            font-weight: 600;
+            margin-left: 1.5rem;
+        }
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-menu li {
+            margin-left: 2rem;
+        }
+        .nav-menu li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .nav-menu li a:hover {
+            color: #FFD700;
+        }
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background-color: #003087;
+                flex-direction: column;
+                padding: 1rem 0;
+            }
+            .nav-menu.active {
+                display: flex;
+            }
+            .nav-menu li {
+                margin: 0.5rem 0;
+                text-align: center;
+            }
+            .nav-container {
+                padding: 1rem;
+            }
+            .nav-logo span {
+                display: none;
+            }
+            .nav-logo img {
+                height: 45px;
+                border-radius: 70px;
+            }
+        }
+        .hero {
+            background: url('https://via.placeholder.com/1920x600?text=ECWA+Students+Ministry+Banner') no-repeat center center/cover;
+            height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            margin-top: 80px;
+            position: relative;
+        }
+        .hero-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+        }
+        .hero-content h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .hero-content p {
+            font-size: 1.25rem;
+            font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .cta-button {
+            background-color: #FFD700;
+            color: #003087;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .cta-button:hover {
+            background-color: #e6c200;
+        }
+        .section {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px 8px 0 0;
+        }
+        @media (max-width: 768px) {
+            .hero {
+                height: 400px;
+            }
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+            .hero-content p {
+                font-size: 1rem;
+            }
+            .section {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav id="navbar" class="fixed w-full bg-blue-900 text-white py-4 z-50">
+        <div class="nav-container">
+            <div class="nav-logo flex items-center">
+                <a href="index.html"><img src="esm_logo.jpg" alt="ESM Logo" class="h-60 w-auto mr-2"></a>
+                <span class="text-yellow-400 font-semibold text-lg md:text-xl hidden md:inline">Federal University of Education, Pankshin</span>
+            </div>
+            <button id="menu-toggle" class="menu-toggle md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                </svg>
+            </button>
+            <ul id="nav-menu" class="nav-menu">
+                <li><a href="index.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Home</a></li>
+                <li><a href="about.html" class="hover:text-yellow-400 transition duration-300 font-semibold">About</a></li>
+                <li><a href="events.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Events</a></li>
+                <li><a href="meetings.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Meetings</a></li>
+                <li><a href="leadership.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Leadership</a></li>
+                <li><a href="gallery.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Gallery</a></li>
+                <li><a href="contact.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>Welcome to ECWA Students Ministry FUEP</h1>
+            <p>Growing in faith, serving with love, and impacting lives at the Federal University of Education, Pankshin.</p>
+            <a href="contact.html" class="cta-button mt-4 inline-block">Get Involved</a>
+        </div>
+    </section>
+
+    <section class="section bg-white">
+        <h2 class="text-2xl sm:text-3xl font-bold text-blue-900 text-center mb-8">About Us</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card">
+                <img src="https://via.placeholder.com/600x200?text=About+Us" alt="About Us">
+                <div class="p-6">
+                    <p class="text-gray-600">The ECWA Students Ministry - FUEP Chapter is a vibrant community dedicated to spiritual growth, fellowship, and service. We aim to nurture faith and support students in their academic and personal journeys.</p>
+                </div>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/600x200?text=Our+Mission" alt="Our Mission">
+                <div class="p-6">
+                    <p class="text-gray-600">Our mission is to disciple students, promote evangelism, and foster a supportive environment rooted in Christian values at FUEP.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section bg-gray-100">
+        <h2 class="text-2xl sm:text-3xl font-bold text-blue-900 text-center mb-8">Leadership Highlights</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="card">
+                <img src="https://via.placeholder.com/400x200?text=President" alt="President">
+                <div class="p-6 text-center">
+                    <h3 class="text-lg font-semibold text-blue-900">President</h3>
+                    <p class="text-gray-600">Name Placeholder - Leads with vision and faith.</p>
+                </div>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/400x200?text=Vice+President" alt="Vice President">
+                <div class="p-6 text-center">
+                    <h3 class="text-lg font-semibold text-blue-900">Vice President</h3>
+                    <p class="text-gray-600">Name Placeholder - Supports leadership initiatives.</p>
+                </div>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/400x200?text=Secretary" alt="Secretary">
+                <div class="p-6 text-center">
+                    <h3 class="text-lg font-semibold text-blue-900">General Secretary</h3>
+                    <p class="text-gray-600">Name Placeholder - Manages communication.</p>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-6">
+            <a href="leadership.html" class="cta-button">View Full Leadership</a>
+        </div>
+    </section>
+
+    <section class="section bg-white">
+        <h2 class="text-2xl sm:text-3xl font-bold text-blue-900 text-center mb-8">Upcoming Events</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card">
+                <img src="https://via.placeholder.com/600x200?text=Event+1" alt="Event 1">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-blue-900">Fellowship Gathering</h3>
+                    <p class="text-gray-600">Date: October 5, 2025 | Join us for worship and fellowship.</p>
+                </div>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/600x200?text=Event+2" alt="Event 2">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-blue-900">Outreach Program</h3>
+                    <p class="text-gray-600">Date: October 12, 2025 | Community service and evangelism.</p>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-6">
+            <a href="events.html" class="cta-button">View All Events</a>
+        </div>
+    </section>
+
+    <footer class="bg-blue-900 text-white py-6 text-center">
+        <p>&copy; 2025 ECWA Students Ministry - FUEP Chapter. All rights reserved.</p>
+        <p class="mt-2">Follow us: 
+            <a href="https://facebook.com" target="_blank" class="text-yellow-400 hover:underline">Facebook</a> | 
+            <a href="https://youtube.com/channel/UCal8uUHyc_L-MvjnILIq43Q" target="_blank" class="text-yellow-400 hover:underline">YouTube</a>
+        </p>
+        <p>Connected with <a href="https://ecwaglobal.org" target="_blank" class="text-yellow-400 hover:underline">ECWA Global</a></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuToggle = document.getElementById('menu-toggle');
+            const navMenu = document.getElementById('nav-menu');
+            menuToggle.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+            });
+            navMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    navMenu.classList.remove('active');
+                });
+            });
+
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('nav-scrolled');
+                } else {
+                    navbar.classList.remove('nav-scrolled');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

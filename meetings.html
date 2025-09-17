@@ -1,0 +1,263 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meetings - ECWA Students Ministry FUEP</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fa;
+        }
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: #003087;
+            z-index: 1000;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .nav-scrolled {
+            background-color: rgba(0, 48, 135, 0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-logo {
+            height: 60px;
+            width: auto;
+            display: flex;
+            align-items: center;
+        }
+        .nav-logo img {
+            height: 60px;
+            width: auto;
+            border-radius: 90px;
+            object-fit: cover;
+        }
+        .nav-logo span {
+            color: #FFD700;
+            font-weight: 600;
+            margin-left: 1.5rem;
+        }
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-menu li {
+            margin-left: 2rem;
+        }
+        .nav-menu li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .nav-menu li a:hover {
+            color: #FFD700;
+        }
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background-color: #003087;
+                flex-direction: column;
+                padding: 1rem 0;
+            }
+            .nav-menu.active {
+                display: flex;
+            }
+            .nav-menu li {
+                margin: 0.5rem 0;
+                text-align: center;
+            }
+            .nav-container {
+                padding: 1rem;
+            }
+            .nav-logo span {
+                display: none;
+            }
+            .nav-logo img {
+                height: 45px;
+                border-radius: 70px;
+            }
+        }
+        .section {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            margin-top: 80px;
+        }
+        .event-card {
+            background-color: white;
+            border: 2px solid #003087;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        @media (max-width: 768px) {
+            .section {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav id="navbar" class="fixed w-full bg-blue-900 text-white py-4 z-50">
+        <div class="nav-container">
+            <div class="nav-logo flex items-center">
+                <a href="index.html"><img src="esm_logo.jpg" alt="ESM Logo" class="h-60 w-auto mr-2"></a>
+                <span class="text-yellow-400 font-semibold text-lg md:text-xl hidden md:inline">Federal University of Education, Pankshin</span>
+            </div>
+            <button id="menu-toggle" class="menu-toggle md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                </svg>
+            </button>
+            <ul id="nav-menu" class="nav-menu">
+                <li><a href="index.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Home</a></li>
+                <li><a href="about.html" class="hover:text-yellow-400 transition duration-300 font-semibold">About</a></li>
+                <li><a href="events.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Events</a></li>
+                <li><a href="meetings.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Meetings</a></li>
+                <li><a href="leadership.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Leadership</a></li>
+                <li><a href="gallery.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Gallery</a></li>
+                <li><a href="contact.html" class="hover:text-yellow-400 transition duration-300 font-semibold">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="section bg-white">
+        <h2 class="text-2xl sm:text-3xl font-bold text-blue-900 text-center mb-8">Days of Meeting</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="event-card">
+                <h3 class="text-xl font-semibold text-blue-900 mb-2">Monday: Prayer Band</h3>
+                <p class="text-gray-600">Time: 6:00 PM - 7:00 PM</p>
+                <p class="mt-2">Join us for a dedicated time of prayer to start the week with spiritual strength.</p>
+            </div>
+            <div class="event-card">
+                <h3 class="text-xl font-semibold text-blue-900 mb-2">Wednesday: Mid-Week Prayer</h3>
+                <p class="text-gray-600">Time: 6:00 PM - 7:00 PM</p>
+                <p class="mt-2">Mid-week prayer to refocus and seek God's guidance.</p>
+            </div>
+            <div class="event-card">
+                <h3 class="text-xl font-semibold text-blue-900 mb-2">Friday: Bible Study</h3>
+                <p class="text-gray-600">Time: 5:30 PM - 7:00 PM</p>
+                <p class="mt-2">Deep dive into God’s Word to grow in faith and knowledge.</p>
+            </div>
+            <div class="event-card">
+                <h3 class="text-xl font-semibold text-blue-900 mb-2">Friday: Night Vigil</h3>
+                <p class="text-gray-600">Time: Last Friday of the Month</p>
+                <p class="mt-2">An extended night of worship and prayer for spiritual renewal.</p>
+            </div>
+            <div class="event-card">
+                <h3 class="text-xl font-semibold text-blue-900 mb-2">Sunday: Fellowship Service</h3>
+                <p class="text-gray-600">Time: 7:00 AM - 10:00 AM</p>
+                <p class="mt-2">Weekly worship service to celebrate and grow in Christ together.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-blue-900 text-white py-6 text-center">
+        <p>&copy; 2025 ECWA Students Ministry - FUEP Chapter. All rights reserved.</p>
+        <p class="mt-2">Follow us: 
+            <a href="https://facebook.com" target="_blank" class="text-yellow-400 hover:underline">Facebook</a> | 
+            <a href="https://youtube.com/channel/UCal8uUHyc_L-MvjnILIq43Q" target="_blank" class="text-yellow-400 hover:underline">YouTube</a>
+        </p>
+        <p>Connected with <a href="https://ecwaglobal.org" target="_blank" class="text-yellow-400 hover:underline">ECWA Global</a></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuToggle = document.getElementById('menu-toggle');
+            const navMenu = document.getElementById('nav-menu');
+            menuToggle.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+            });
+            navMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    navMenu.classList.remove('active');
+                });
+            });
+
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('nav-scrolled');
+                } else {
+                    navbar.classList.remove('nav-scrolled');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
